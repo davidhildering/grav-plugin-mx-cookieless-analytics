@@ -124,7 +124,7 @@ class MxcoanAnalyticsPlugin extends Plugin
      *
      * @return void
      */
-    public function onOutputGenerated()
+    public function onOutputGenerated($event = null)
     {
         // Opt-in gate (defense-in-depth: this handler is only subscribed when
         // enabled AND connected, but never inject on a stale subscription).
@@ -135,18 +135,10 @@ class MxcoanAnalyticsPlugin extends Plugin
             return;
         }
 
-        $output = $this->grav['output']->getContent();
-        if (!is_string($output) || strpos($output, '</head>') === false) {
-            return;
-        }
-
-        // HTML only — never touch JSON/XML/ATOM outputs.
-        $contentType = '';
-        $response = $this->grav['output'];
-        if (method_exists($response, 'getHeaderLine')) {
-            $contentType = (string) $response->getHeaderLine('Content-Type');
-        }
-        if ($contentType !== '' && stripos($contentType, 'text/html') === false) {
+        // Grav passes the rendered output as a STRING, by reference on the
+        // event (RenderProcessor: Event(['output' => &$grav->output])).
+        $output = is_string($this->grav['output']) ? $this->grav['output'] : '';
+        if ($output === '' || strpos($output, '</head>') === false) {
             return;
         }
 
@@ -166,8 +158,15 @@ class MxcoanAnalyticsPlugin extends Plugin
             . '" src="' . htmlspecialchars($src, ENT_QUOTES, 'UTF-8') . '"></script>';
 
         $updated = preg_replace('/<\/head>/i', addcslashes($script, '\\$') . "\n</head>", $output, 1);
-        if ($updated !== null) {
-            $this->grav['output']->setContent($updated);
+        if ($updated !== null && $updated !== $output) {
+            // Write through the event's by-reference output slot (the
+            // RenderProcessor echoes exactly that variable); property
+            // assignment as fallback when no event was passed.
+            if ($event !== null && isset($event['output'])) {
+                $event['output'] = $updated;
+            } else {
+                $this->grav->output = $updated;
+            }
         }
     }
 
@@ -308,3 +307,10 @@ class MxcoanAnalyticsPlugin extends Plugin
         }
     }
 }
+
+// Grav loads plugins via `include` and expects the FILE to return the plugin
+// instance (loadPlugin() falls back to class-name guessing on
+// camelize(slug).'Plugin', which does not match MxcoanAnalyticsPlugin).
+// $name and $grav are provided by Grav in the included file's scope.
+$instance = new MxcoanAnalyticsPlugin($name, $grav);
+return $instance;
