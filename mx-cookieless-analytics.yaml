@@ -1,0 +1,12 @@
+# MX Cookieless Analytics — default plugin configuration.
+# User overrides live in user/config/plugins/mx-cookieless-analytics.yaml
+# (or via the Admin plugin settings). Tracking is opt-in: the tracker is only
+# injected when `enabled` is true AND the site is `connected`.
+
+enabled: false
+api_key: ''
+api_base: 'https://app.metrixs.eu'
+domain: ''
+exclude_admin: true
+connected: false
+challenge: ''
