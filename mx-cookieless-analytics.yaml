@@ -2,6 +2,9 @@
 # User overrides live in user/config/plugins/mx-cookieless-analytics.yaml
 # (or via the Admin plugin settings). Tracking is opt-in: the tracker is only
 # injected when `enabled` is true AND the site is `connected`.
+# `connected` and `challenge` are internal state managed by the connect flow
+# (not form settings): the challenge is only stored while a handshake is in
+# flight and cleared afterwards.
 
 enabled: false
 api_key: ''

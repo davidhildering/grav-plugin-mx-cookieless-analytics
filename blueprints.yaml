@@ -1,7 +1,7 @@
 name: MX Cookieless Analytics
 type: plugin
 slug: mx-cookieless-analytics
-version: 1.0.0
+version: 1.0.1
 description: Cookieless, privacy-friendly web analytics. Opt-in tracking (off until you connect), GDPR-friendly, EU-hosted. Automatic site verification, no DNS records needed.
 icon: chart-line
 author:
@@ -9,6 +9,7 @@ author:
   email: info@metrixs.eu
   url: https://metrixs.eu
 homepage: https://github.com/davidhildering/grav-plugin-mx-cookieless-analytics
+docs: https://github.com/davidhildering/grav-plugin-mx-cookieless-analytics#readme
 keywords: analytics, privacy, gdpr, cookieless
 bugs: https://github.com/davidhildering/grav-plugin-mx-cookieless-analytics/issues
 license: MIT
@@ -35,24 +36,24 @@ form:
       validate:
         type: bool
     api_key:
-      type: text
+      type: password
       label: Site API key
-      help: Create one in the MetriXs dashboard under Settings → Sites → API keys. Verification starts automatically after saving.
+      help: Create one in the MetriXs dashboard under Settings → Sites → API keys. Verification runs automatically after saving.
       placeholder: mtx_live_…
     api_base:
       type: text
       label: MetriXs URL
       default: 'https://app.metrixs.eu'
-      help: Only change this for a self-hosted or custom MetriXs endpoint.
+      help: Only change this for a self-hosted MetriXs endpoint. HTTPS only — the API key is sent to this host.
     domain:
       type: text
       label: Site domain
       placeholder: example.com
-      help: Leave empty to auto-detect from the site URL.
+      help: Leave empty to auto-detect from the configured site URL.
     exclude_admin:
       type: toggle
-      label: Exclude logged-in admins
-      help: Never count visits by logged-in admin users.
+      label: Exclude admins
+      help: Never track users with admin access. Regular logged-in users (members) are still tracked.
       highlight: 1
       default: 1
       options:
@@ -60,7 +61,3 @@ form:
         0: 'No'
       validate:
         type: bool
-    connected:
-      type: hidden
-    challenge:
-      type: hidden

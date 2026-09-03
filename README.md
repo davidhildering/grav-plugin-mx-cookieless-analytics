@@ -6,7 +6,7 @@ Cookieless, privacy-friendly web analytics for [Grav CMS](https://getgrav.org). 
 - **Opt-in, off by default.** Activating the plugin loads nothing and sends nothing. Tracking starts only after you paste your site API key and enable tracking.
 - **Automatic verification.** No DNS records, no theme editing: the plugin proves domain ownership to MetriXs itself.
 - **EU-hosted.** Data lives on MetriXs servers in Germany and never leaves the EU.
-- **Admin exclusion.** Logged-in admin users are excluded by default, so your own visits never pollute your stats.
+- **Admin exclusion.** Users with admin access are excluded by default, so your own visits never pollute your stats. Regular logged-in users (members) are still tracked.
 
 ## Installation
 
@@ -37,7 +37,7 @@ Your dashboard is at [app.metrixs.eu](https://app.metrixs.eu): visitors, pagevie
 | `connected` | `false` | Set automatically by the verification flow. Do not edit by hand. |
 | `challenge` | `''` | Verification token. Set automatically. Do not edit by hand. |
 
-The tracker script is served from `app.metrixs.eu` with a versioned URL and works fine with full-page caching and optimization setups — it is injected into the cached output and loaded asynchronously (`defer`).
+The tracker script is served from `app.metrixs.eu` with a versioned URL, injected into the page output on every request (a single, cheap string replacement) and loaded asynchronously (`defer`). It works fine alongside full-page caching and optimization setups.
 
 ## Disconnecting
 
