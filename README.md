@@ -7,6 +7,9 @@ Cookieless, privacy-friendly web analytics for [Grav CMS](https://getgrav.org). 
 - **Automatic verification.** No DNS records, no theme editing: the plugin proves domain ownership to MetriXs itself.
 - **EU-hosted.** Data lives on MetriXs servers in Germany and never leaves the EU.
 - **Admin exclusion.** Users with admin access are excluded by default, so your own visits never pollute your stats. Regular logged-in users (members) are still tracked.
+- **AI traffic panel.** See visitors arriving from ChatGPT, Perplexity, Gemini and other AI assistants. Team and Pro plans add a GEO-readiness audit (can AI systems read your pages?) and a classic SEO audit on the Visibility tab.
+- **Security tab.** An audit of your site's HTTPS, security-header and cookie posture, plus a live feed of blocked bots.
+- **MCP server.** Query your analytics read-only from Claude, ChatGPT, Gemini or Copilot: MetriXs ships a first-party MCP server at mcp.metrixs.eu.
 
 ## Installation
 
