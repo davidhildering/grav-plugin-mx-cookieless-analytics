@@ -1,3 +1,9 @@
+# 1.1.0
+## 2026-09-14
+
+1. [](#new)
+    * One-click connect: a "Connect with MetriXs" link at the top of the plugin settings opens the MetriXs dashboard, where you create (or open) your account and the site is added, connected and verified automatically. No API key copying; works on your phone. The manual API-key flow works unchanged.
+
 # 1.0.1
 ## 2026-09-02
 

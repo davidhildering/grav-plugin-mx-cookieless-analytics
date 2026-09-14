@@ -57,21 +57,22 @@ class MxCookielessAnalyticsPlugin extends Plugin
     }
 
     /**
-     * Initialize: intercept the challenge endpoint and enable output
-     * injection when tracking is on.
+     * Initialize: intercept the challenge + one-click connect endpoints and
+     * enable output injection when tracking is on.
      *
      * @return void
      */
     public function onPluginsInitialized()
     {
+        $uri = $this->grav['uri'];
+        $path = trim((string) $uri->path(), '/');
+
         // ── Challenge endpoint ────────────────────────────────────────────
         // Runs before Grav routing/pages/cache: echo JSON + exit. Serves the
         // token only while a handshake is in flight (it is cleared once the
         // handshake completes), so no verification token sits on a public
         // endpoint longer than needed. Without a stored token the endpoint
         // simply 404s (falls through to Grav's router).
-        $uri = $this->grav['uri'];
-        $path = trim((string) $uri->path(), '/');
         if (rtrim($path, '/') === 'mxcoan/challenge') {
             $token = (string) $this->config->get('plugins.' . $this->name . '.challenge', '');
             if (preg_match('/^[0-9a-f]{64}$/', $token)) {
@@ -80,6 +81,22 @@ class MxCookielessAnalyticsPlugin extends Plugin
                 echo json_encode(array('challenge' => $token));
                 exit;
             }
+        }
+
+        // ── One-click connect (Phase 2, docs/mobile-onboarding-plan.md) ──
+        // /mxcoan/connect (admin-only): store a one-time state and redirect
+        // to the MetriXs dashboard's /connect/grav page. The dashboard (after
+        // inline login/register) creates the site + a one-time exchange code
+        // and redirects back to /mxcoan/oauth-callback?code=…&state=…, which
+        // swaps the pair for a site-scoped API key (single-use, returned
+        // once) and runs the normal challenge → verify handshake. Admin
+        // gated; everything else falls through to Grav's router (404).
+
+        if ($path === 'mxcoan/connect') {
+            $this->oauthStart();
+        }
+        if ($path === 'mxcoan/oauth-callback') {
+            $this->oauthCallback();
         }
 
         // ── Tracker injection ─────────────────────────────────────────────
@@ -199,6 +216,139 @@ class MxCookielessAnalyticsPlugin extends Plugin
     }
 
     // ─── Connect flow ─────────────────────────────────────────────────────
+
+    /**
+     * Admin gate for the one-click connect routes. Permission-based (the
+     * 1.0.1 GPM review learning): authorize('admin.login'), never
+     * `authenticated` — a front-end member must not be able to connect.
+     *
+     * @return bool
+     */
+    private function isAdminRequest()
+    {
+        $user = isset($this->grav['user']) ? $this->grav['user'] : null;
+        return $user && method_exists($user, 'authorize') && $user->authorize('admin.login');
+    }
+
+    /**
+     * /mxcoan/connect — generate a one-time state and redirect the admin to
+     * the MetriXs dashboard's /connect/grav page.
+     *
+     * @return void
+     */
+    private function oauthStart()
+    {
+        if (!$this->isAdminRequest()) {
+            header('HTTP/1.1 403 Forbidden');
+            exit;
+        }
+
+        $state = bin2hex(random_bytes(16));
+        $this->config->set('plugins.' . $this->name . '.oauth_state', $state);
+        $this->config->set('plugins.' . $this->name . '.oauth_expires', time() + 900);
+        self::saveConfig($this->name);
+
+        $back = $this->siteOrigin() . '/mxcoan/oauth-callback';
+        $url = $this->apiBase() . '/connect/grav?'
+            . http_build_query(array(
+                'state' => $state,
+                'site' => $this->siteDomain(),
+                'back' => $back,
+            ));
+
+        // wp_redirect-equivalent: plain Location header (external host —
+        // Grav's redirect helpers are not loaded at this point).
+        header('Location: ' . $url);
+        exit;
+    }
+
+    /**
+     * /mxcoan/oauth-callback — validate the state (single-use, cleared
+     * before any use), exchange { code, state } for a site-scoped API key
+     * and run the normal challenge → verify handshake. The `state` IS the
+     * CSRF token: this request arrives via a cross-site redirect from the
+     * MetriXs dashboard.
+     *
+     * @return void
+     */
+    private function oauthCallback()
+    {
+        if (!$this->isAdminRequest()) {
+            header('HTTP/1.1 403 Forbidden');
+            exit;
+        }
+
+        $code = isset($_GET['code']) ? preg_replace('/[^0-9a-f]/', '', (string) $_GET['code']) : '';
+        $state = isset($_GET['state']) ? preg_replace('/[^A-Za-z0-9]/', '', (string) $_GET['state']) : '';
+
+        $stored = (string) $this->config->get('plugins.' . $this->name . '.oauth_state', '');
+        $expires = (int) $this->config->get('plugins.' . $this->name . '.oauth_expires', 0);
+        // Clear BEFORE any use — the state is single-use.
+        $this->config->set('plugins.' . $this->name . '.oauth_state', '');
+        $this->config->set('plugins.' . $this->name . '.oauth_expires', 0);
+        self::saveConfig($this->name);
+
+        $adminUrl = rtrim($this->siteOrigin(), '/') . '/admin/plugins/' . $this->name;
+        if ($code === '' || $stored === '' || !hash_equals($stored, $state) || time() > $expires) {
+            $this->adminMessage(
+                'MX Cookieless Analytics: one-click connect did not complete (the request expired or was already used). Please try again.',
+                'error'
+            );
+            header('Location: ' . $adminUrl);
+            exit;
+        }
+
+        // Exchange { code, state } → full API key (returned once). No key
+        // exists yet — the pair itself is the proof.
+        $exchange = $this->apiPost('/api/integrations/grav/exchange', array(
+            'code' => $code,
+            'state' => $state,
+        ), '');
+        if (empty($exchange['ok']) || empty($exchange['data']['apiKey'])) {
+            $this->adminMessage(
+                'MX Cookieless Analytics: one-click connect did not complete. Please try again.',
+                'error'
+            );
+            header('Location: ' . $adminUrl);
+            exit;
+        }
+
+        $apiKey = preg_replace('/[^A-Za-z0-9_\-]/', '', (string) $exchange['data']['apiKey']);
+        $this->config->set('plugins.' . $this->name . '.api_key', $apiKey);
+        self::saveConfig($this->name);
+
+        // Normal challenge → verify handshake with the fresh key.
+        $this->runHandshake($apiKey);
+
+        header('Location: ' . $adminUrl);
+        exit;
+    }
+
+    /**
+     * The site's own origin (scheme + host), preferring the scheme/host of
+     * system.custom_base_url — the same source the domain resolution trusts
+     * (NOT the Host header, which a cache in front can poison). Used for the
+     * one-click `back` URL, which the MetriXs API validates against the
+     * site's domain.
+     *
+     * @return string
+     */
+    private function siteOrigin()
+    {
+        $customBase = (string) $this->config->get('system.custom_base_url', '');
+        if ($customBase !== '') {
+            $parts = parse_url($customBase);
+            if (!empty($parts['host'])) {
+                $scheme = isset($parts['scheme']) ? $parts['scheme'] : 'https';
+                $origin = $scheme . '://' . $parts['host'];
+                if (!empty($parts['port'])) {
+                    $origin .= ':' . $parts['port'];
+                }
+                return rtrim($origin . (isset($parts['path']) ? $parts['path'] : ''), '/');
+            }
+        }
+        return 'https://' . $this->siteDomain();
+    }
 
     /**
      * Challenge → verify handshake, triggered from onAdminAfterSave only.

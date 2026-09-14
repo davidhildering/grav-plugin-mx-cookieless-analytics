@@ -1,7 +1,7 @@
 name: MX Cookieless Analytics
 type: plugin
 slug: mx-cookieless-analytics
-version: 1.0.1
+version: 1.1.0
 description: Cookieless, privacy-friendly web analytics. Opt-in tracking (off until you connect), GDPR-friendly, EU-hosted. Automatic site verification, no DNS records needed.
 icon: chart-line
 author:
@@ -35,6 +35,10 @@ form:
         0: 'No'
       validate:
         type: bool
+    connect_info:
+      type: info
+      label: One-click connect (recommended)
+      content: "Open the [one-click connect](/mxcoan/connect) (admin login required): MetriXs creates your account (or opens it), adds this site and verifies the plugin automatically. No API key copying. Manual setup: paste a Site API key below."
     api_key:
       type: password
       label: Site API key
