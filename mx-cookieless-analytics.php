@@ -35,7 +35,7 @@ class MxCookielessAnalyticsPlugin extends Plugin
      * tracker release and publish a new plugin release so installs fetch
      * the fresh script.
      */
-    const TRACKER_VERSION = '1.1.0';
+    const TRACKER_VERSION = '1.2.0';
 
     /**
      * @return array

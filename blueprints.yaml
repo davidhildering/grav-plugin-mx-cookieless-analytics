@@ -1,7 +1,7 @@
 name: MX Cookieless Analytics
 type: plugin
 slug: mx-cookieless-analytics
-version: 1.1.0
+version: 1.1.1
 description: Cookieless, privacy-friendly web analytics. Opt-in tracking (off until you connect), GDPR-friendly, EU-hosted. Automatic site verification, no DNS records needed.
 icon: chart-line
 author:

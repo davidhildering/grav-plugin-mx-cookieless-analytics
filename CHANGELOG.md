@@ -1,3 +1,9 @@
+# 1.1.1
+## 2026-09-16
+
+1. [](#new)
+    * Updated the bundled tracker script (v1.2.0): custom-event properties that look like personal data (PII) are now removed automatically before they are stored, and property limits (max 30 props, key <= 300 chars, value <= 2000 chars) are enforced. Privacy: MetriXs still stores no personal data.
+
 # 1.1.0
 ## 2026-09-14
 
