@@ -10,6 +10,7 @@ Cookieless, privacy-friendly web analytics for [Grav CMS](https://getgrav.org). 
 - **AI traffic panel.** See visitors arriving from ChatGPT, Perplexity, Gemini and other AI assistants. Team, Pro and Agency plans add a GEO-readiness audit (can AI systems read your pages?) and a classic SEO audit on the Visibility tab.
 - **Security tab.** An audit of your site's HTTPS, security-header and cookie posture, plus a live feed of blocked bots.
 - **MCP server.** Query your analytics read-only from Claude, ChatGPT, Gemini or Copilot: MetriXs ships a first-party MCP server at mcp.metrixs.eu.
+- **Custom funnels.** Build a conversion funnel from any pages and events, sequential, flexible or strict, with per-step drop-off and previous-period comparison (Basic plan and up).
 
 ## Installation
 
